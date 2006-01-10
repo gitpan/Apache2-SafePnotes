@@ -7,7 +7,7 @@ Requires:     perl = %{perl_version}
 Requires:     p_mod_perl >= 1.999022
 Autoreqprov:  on
 Summary:      Apache2::SafePnotes
-Version:      0.01
+Version:      0.02
 Release:      1
 Source:       Apache2-SafePnotes-%{version}.tar.gz
 BuildRoot:    %{_tmppath}/%{name}-%{version}-build

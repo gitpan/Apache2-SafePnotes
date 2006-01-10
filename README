@@ -4,6 +4,8 @@ NAME
 
 SYNOPSIS
       use Apache2::SafePnotes;
+      use Apache2::SafePnotes qw/pnotes/;
+      use Apache2::SafePnotes qw/whatever/;
 
 INSTALLATION
      perl Makefile.PL
@@ -42,8 +44,19 @@ DESCRIPTION
     With "Apache2::SafePnotes" the problem goes away and $x will be 1 in
     both cases.
 
-  EXPORT
-    None.
+  INTERFACE
+    This module must be "use"'d not "require"'d. It does it's work in an
+    "import" function.
+
+    use Apache2::SafePnotes
+        creates the function "Apache::RequestRec::safe_pnotes" as a
+        replacement for "pnotes". The old "pnotes" function is preserved
+        just in case some code relies on the odd behavior.
+
+    use Apache2::SafePnotes qw/NAME/
+        creates the function "Apache::RequestRec::*NAME*" as a replacement
+        for "pnotes". If "pnotes" is passed as *NAME* the original "pnotes"
+        function is replaced by the safer one.
 
 SEE ALSO
     modperl2, "Apache2::RequestUtil"
@@ -56,4 +69,11 @@ COPYRIGHT AND LICENSE
 
     This library is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself.
+
+POD ERRORS
+    Hey! The above document had some coding errors, which are explained
+    below:
+
+    Around line 104:
+        You forgot a '=back' before '=head1'
 

@@ -5,15 +5,24 @@ use strict;
 use warnings;
 use Apache2::RequestUtil;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
-BEGIN {
-  my $pn=\&Apache2::RequestRec::pnotes;
+my $pn;
+BEGIN {$pn=\&Apache2::RequestRec::pnotes;}
+
+sub safe_pnotes {
+  my $r=shift;
+  $r->$pn(@_==2 ? ($_[0], my $x=$_[1]) : @_);
+}
+
+sub import {
+  my $module=shift;
+  my $fn=shift || 'safe_pnotes';
+
   no warnings 'redefine';
-  *Apache2::RequestRec::pnotes=sub {
-    my $r=shift;
-    $r->$pn(@_==2 ? ($_[0], my $x=$_[1]) : @_);
-  }
+  no strict 'refs';
+
+  *{'Apache2::RequestRec::'.$fn}=\&safe_pnotes;
 }
 
 1;
@@ -26,6 +35,8 @@ Apache2::SafePnotes - a safer replacement for Apache2::RequestUtil::pnotes
 =head1 SYNOPSIS
 
   use Apache2::SafePnotes;
+  use Apache2::SafePnotes qw/pnotes/;
+  use Apache2::SafePnotes qw/whatever/;
 
 =head1 DESCRIPTION
 
@@ -56,9 +67,24 @@ Even now C<$x> is C<2>.
 With C<Apache2::SafePnotes> the problem goes away and C<$x> will be C<1>
 in both cases.
 
-=head2 EXPORT
+=head2 INTERFACE
 
-None.
+This module must be C<use>'d not C<require>'d. It does it's work in an
+C<import> function.
+
+=over 4
+
+=item B<use Apache2::SafePnotes>
+
+creates the function C<Apache::RequestRec::safe_pnotes> as a replacement
+for C<pnotes>. The old C<pnotes> function is preserved just in case some
+code relies on the odd behavior.
+
+=item B<use Apache2::SafePnotes qw/NAME/>
+
+creates the function C<Apache::RequestRec::I<NAME>> as a replacement
+for C<pnotes>. If C<pnotes> is passed as I<NAME> the original C<pnotes>
+function is replaced by the safer one.
 
 =head1 SEE ALSO
 
