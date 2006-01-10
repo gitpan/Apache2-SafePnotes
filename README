@@ -1,0 +1,59 @@
+NAME
+    Apache2::SafePnotes - a safer replacement for
+    Apache2::RequestUtil::pnotes
+
+SYNOPSIS
+      use Apache2::SafePnotes;
+
+INSTALLATION
+     perl Makefile.PL
+     make
+     make test
+     make install
+
+DEPENDENCIES
+    mod_perl2
+
+DESCRIPTION
+    This module cures a problem with "Apache2::RequestUtil::pnotes". This
+    function stores perl variables making them accessible from various
+    phases of the Apache request cycle.
+
+    Unfortunately, the function does not copy a passed variable but only
+    increments its reference counter and saves a reference.
+
+    Thus, the following situation could lead to unexpected results:
+
+      my $v=1;
+      $r->pnotes( 'v'=>$v );
+      $v++;
+      my $x=$r->pnotes('v');
+
+    I'd expect $x to be 1 after that code snipped but it turns out to be 2.
+    The same goes for the tied hash interface:
+
+      my $v=1;
+      $r->pnotes->{v}=$v;
+      $v++;
+      my $x=$r->pnotes->{v};
+
+    Even now $x is 2.
+
+    With "Apache2::SafePnotes" the problem goes away and $x will be 1 in
+    both cases.
+
+  EXPORT
+    None.
+
+SEE ALSO
+    modperl2, "Apache2::RequestUtil"
+
+AUTHOR
+    Torsten Foertsch, <torsten.foertsch@gmx.net>
+
+COPYRIGHT AND LICENSE
+    Copyright (C) 2006 by Torsten Foertsch
+
+    This library is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself.
+
