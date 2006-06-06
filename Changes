@@ -1,6 +1,7 @@
-Revision history for Perl extension Apache2::AuthzGroupDBI.
+Revision history for Perl extension Apache2::SafePnotes.
 
 0.01  Mon Jan  9 19:57:46 2006
-	- original version; created by h2xs 1.23 with options
-		-A -b 5.8.0 -n Apache2::AuthzGroupDBI -XS
+	- original version
 
+0.03  Tue Jun  6 19:00:39 CEST 2006
+	- added support for connection pnotes

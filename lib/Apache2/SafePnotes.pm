@@ -3,16 +3,25 @@ package Apache2::SafePnotes;
 use 5.008;
 use strict;
 use warnings;
-use Apache2::RequestUtil;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
-my $pn;
-BEGIN {$pn=\&Apache2::RequestRec::pnotes;}
+my ($pn, $cn);
+BEGIN {
+  require Apache2::RequestUtil;
+  eval {require Apache2::ConnectionUtil;};
+  $pn=\&Apache2::RequestRec::pnotes;
+  $cn=\&Apache2::Connection::pnotes if defined &Apache2::Connection::pnotes;
+}
 
 sub safe_pnotes {
   my $r=shift;
   $r->$pn(@_==2 ? ($_[0], my $x=$_[1]) : @_);
+}
+
+sub safe_cpnotes {
+  my $r=shift;
+  $r->$cn(@_==2 ? ($_[0], my $x=$_[1]) : @_);
 }
 
 sub import {
@@ -23,6 +32,7 @@ sub import {
   no strict 'refs';
 
   *{'Apache2::RequestRec::'.$fn}=\&safe_pnotes;
+  *{'Apache2::Connection::'.$fn}=\&safe_cpnotes if defined $cn;
 }
 
 1;
@@ -40,29 +50,39 @@ Apache2::SafePnotes - a safer replacement for Apache2::RequestUtil::pnotes
 
 =head1 DESCRIPTION
 
-This module cures a problem with C<Apache2::RequestUtil::pnotes>. This
-function stores perl variables making them accessible from various
-phases of the Apache request cycle.
+This module cures a problem with C<Apache2::RequestRec::pnotes> and
+ C<Apache2::Connection::pnotes> (available since mod_perl 2.0.3).
+These functions store perl variables making
+them accessible from various phases of the Apache request cycle.
 
-Unfortunately, the function does not copy a passed variable but only
-increments its reference counter and saves a reference.
+According to the docs there are 2 ways to store data as a pnote:
 
-Thus, the following situation could lead to unexpected results:
+  $r->pnotes( key=>"value" );
+
+and
+
+  $r->pnotes->{key}="value";
+
+Unfortunately, these 2 versions work slightly different.
+Assuming the following code
 
   my $v=1;
   $r->pnotes( 'v'=>$v );
   $v++;
   my $x=$r->pnotes('v');
 
-I'd expect C<$x> to be C<1> after that code snipped but it turns out to be
-C<2>. The same goes for the tied hash interface:
+I'd expect C<$x> to be C<1> but it turns out to be C<2>. Further on, also
+this code snippet leads to unexpected results:
 
   my $v=1;
-  $r->pnotes->{v}=$v;
-  $v++;
-  my $x=$r->pnotes->{v};
+  $r->pnotes( 'v'=>$v );
+  $r->pnotes->{v}++;
+  my $x=$v;
 
-Even now C<$x> is C<2>.
+Surprise, C<$x> is C<2> as well.
+
+The problem lies in C<$r-E<gt>pnotes( 'v'=E<gt>$v )>. With
+C<$r-E<gt>pnotes-E<gt>{v}=$v> all works as expected (C<$x==1>).
 
 With C<Apache2::SafePnotes> the problem goes away and C<$x> will be C<1>
 in both cases.
@@ -86,9 +106,11 @@ creates the function C<Apache::RequestRec::I<NAME>> as a replacement
 for C<pnotes>. If C<pnotes> is passed as I<NAME> the original C<pnotes>
 function is replaced by the safer one.
 
+=back
+
 =head1 SEE ALSO
 
-modperl2, C<Apache2::RequestUtil>
+modperl2, L<Apache2::RequestUtil>, L<Apache2::Connection>
 
 =head1 AUTHOR
 

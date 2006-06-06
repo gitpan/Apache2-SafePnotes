@@ -17,29 +17,39 @@ DEPENDENCIES
     mod_perl2
 
 DESCRIPTION
-    This module cures a problem with "Apache2::RequestUtil::pnotes". This
-    function stores perl variables making them accessible from various
+    This module cures a problem with "Apache2::RequestRec::pnotes" and
+    "Apache2::Connection::pnotes" (available since mod_perl 2.0.3). These
+    functions store perl variables making them accessible from various
     phases of the Apache request cycle.
 
-    Unfortunately, the function does not copy a passed variable but only
-    increments its reference counter and saves a reference.
+    According to the docs there are 2 ways to store data as a pnote:
 
-    Thus, the following situation could lead to unexpected results:
+      $r->pnotes( key=>"value" );
+
+    and
+
+      $r->pnotes->{key}="value";
+
+    Unfortunately, these 2 versions work slightly different. Assuming the
+    following code
 
       my $v=1;
       $r->pnotes( 'v'=>$v );
       $v++;
       my $x=$r->pnotes('v');
 
-    I'd expect $x to be 1 after that code snipped but it turns out to be 2.
-    The same goes for the tied hash interface:
+    I'd expect $x to be 1 but it turns out to be 2. Further on, also this
+    code snippet leads to unexpected results:
 
       my $v=1;
-      $r->pnotes->{v}=$v;
-      $v++;
-      my $x=$r->pnotes->{v};
+      $r->pnotes( 'v'=>$v );
+      $r->pnotes->{v}++;
+      my $x=$v;
 
-    Even now $x is 2.
+    Surprise, $x is 2 as well.
+
+    The problem lies in "$r->pnotes( 'v'=>$v )". With "$r->pnotes->{v}=$v"
+    all works as expected ("$x==1").
 
     With "Apache2::SafePnotes" the problem goes away and $x will be 1 in
     both cases.
@@ -59,7 +69,7 @@ DESCRIPTION
         function is replaced by the safer one.
 
 SEE ALSO
-    modperl2, "Apache2::RequestUtil"
+    modperl2, Apache2::RequestUtil, Apache2::Connection
 
 AUTHOR
     Torsten Foertsch, <torsten.foertsch@gmx.net>
@@ -69,11 +79,4 @@ COPYRIGHT AND LICENSE
 
     This library is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself.
-
-POD ERRORS
-    Hey! The above document had some coding errors, which are explained
-    below:
-
-    Around line 104:
-        You forgot a '=back' before '=head1'
 

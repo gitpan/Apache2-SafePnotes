@@ -46,25 +46,31 @@ sub handler {
              q{deleted entry contents});
     ok !exists $r->safe_pnotes->{'pnotes_foo'};
 
-    my $x=1;
-    $r->safe_pnotes(x=>$x);
-    $x++;
-    ok t_cmp($r->safe_pnotes('x'), 1, q{safe_pnotes});
+    my $x;
 
     $x=1;
-    $r->safe_pnotes->{x}=$x;
+    $r->safe_pnotes(x=>$x);
     $x++;
-    ok t_cmp($r->safe_pnotes('x'), 1, q{safe_pnotes as hash});
+    ok t_cmp($r->safe_pnotes('x'), 1, q{increment $x});
+    delete $r->safe_pnotes()->{'x'};
+
+    $x=1;
+    $r->safe_pnotes(x=>$x);
+    $r->safe_pnotes->{x}++;
+    ok t_cmp($x, 1, q{increment pnote});
+    delete $r->safe_pnotes()->{'x'};
 
     $x=1;
     $r->pnotes(x=>$x);
     $x++;
     ok t_cmp($r->pnotes('x'), 2, q{original pnotes - wrong behavior});
+    delete $r->pnotes()->{'x'};
 
     $x=1;
-    $r->pnotes->{x}=$x;
-    $x++;
-    ok t_cmp($r->pnotes('x'), 2, q{original pnotes as hash - wrong behavior});
+    $r->pnotes(x=>$x);
+    $r->pnotes->{x}++;
+    ok t_cmp($x, 2, q{original pnotes - increment pnote});
+    delete $r->pnotes()->{'x'};
 
     Apache2::SafePnotes->import( 'pnotes' );
 
@@ -72,11 +78,13 @@ sub handler {
     $r->pnotes(x=>$x);
     $x++;
     ok t_cmp($r->pnotes('x'), 1, q{replaced pnotes});
+    delete $r->pnotes()->{'x'};
 
     $x=1;
-    $r->pnotes->{x}=$x;
-    $x++;
-    ok t_cmp($r->pnotes('x'), 1, q{replaced pnotes as hash});
+    $r->pnotes(x=>$x);
+    $r->pnotes->{x}++;
+    ok t_cmp($x, 1, q{replaced pnotes - increment pnote});
+    delete $r->pnotes()->{'x'};
 
     Apache2::Const::OK;
 }
